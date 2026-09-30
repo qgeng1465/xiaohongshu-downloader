@@ -312,7 +312,7 @@ class TestCLI(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm:
                 x.arg_parser().parse_args(["--version"])
         self.assertEqual(cm.exception.code, 0)
-        self.assertIn("2.0.0", buf.getvalue())
+        self.assertIn(x.__version__, buf.getvalue())
 
     def test_help(self):
         from contextlib import redirect_stdout

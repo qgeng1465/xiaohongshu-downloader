@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+cookie.txt
+*.part
+downloads/
+xhs_download/
+.DS_Store

@@ -43,7 +43,7 @@ if hasattr(sys.stderr, "reconfigure"):
     except Exception:
         pass
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -421,7 +421,9 @@ def download_note(url: str, out_dir: Path, session: requests.Session, lang: str,
         return None
 
     info = extract_content(detail)
-    base = sanitize_name(f"{info['author']}_{info['title']}") or note_id
+    # 作者+标题全空时用 note_id 命名，避免不同笔记互相同名覆盖（sanitize_name 兜底值恒非空，or note_id 原本是死代码）
+    raw = f"{info['author']}_{info['title']}".strip("_ ")
+    base = sanitize_name(raw) if raw else f"xiaohongshu_{note_id}"
     folder = out_dir / base
     folder.mkdir(parents=True, exist_ok=True)
     log(f"  [*] {t(lang, 'note_info', title=info['title'][:40] or '(无标题)', author=info['author'] or '未知')}")
@@ -626,12 +628,13 @@ def main():
     out_dir = Path(out_str)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Cookie 加载优先级：命令行 > cookie.txt 默认文件 > 配置
+    # Cookie 加载优先级：命令行 > cookie.txt 默认文件 > 配置（config 会在每次运行后自动持久化旧 cookie，
+    # 若 config 优先，用户更新 cookie.txt 永远不会生效，故 cookie.txt 必须排在 config 前面）
     cookie_raw = args.cookie
-    if cookie_raw is None and not args.no_config:
-        cookie_raw = cfg.get("cookie")
     if cookie_raw is None and Path("cookie.txt").exists():
         cookie_raw = Path("cookie.txt").read_text(encoding="utf-8").strip()
+    if cookie_raw is None and not args.no_config:
+        cookie_raw = cfg.get("cookie")
     if cookie_raw is None:
         cookie_raw = ""
     if os.path.isfile(cookie_raw):
